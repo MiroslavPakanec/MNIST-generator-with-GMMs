@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  client:
+    container_name: ${CLIENT_CONTAINER_NAME}
+    image: ${CLIENT_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - ./.env
+    ports:
+      - ${HOST_PORT}:${CONTAINER_PORT}
+    networks:
+      - bc-net
+networks:
+  bc-net:
+    driver: bridge
+    name: bc-net
+    external: true

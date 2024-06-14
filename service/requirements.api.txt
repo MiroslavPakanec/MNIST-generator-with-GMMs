@@ -1,0 +1,11 @@
+gunicorn
+uvicorn
+fastapi
+pydantic-settings
+loguru
+pymongo
+
+matplotlib
+pandas
+numpy
+scipy

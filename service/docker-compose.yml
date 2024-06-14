@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+  api:
+    container_name: ${API_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./Dockerfile.api
+    env_file:
+      - ./.env
+    ports:
+      - ${HOST_PORT}:${CONTAINER_PORT}
+    ipc: ${IPC}
+    runtime: ${RUNTIME}
+    depends_on:
+      - db
+      - migration
+    networks:
+      - bc-net
+  migration:
+    container_name: ${MIGRATION_CONTAINER_NAME}
+    build:
+      context: .
+      dockerfile: ./Dockerfile.migration
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    networks:
+      - bc-net
+  db:
+    image: mongo:3.5
+    container_name: ${DB_CONTAINER_NAME}
+    ports:
+      - "${MONGO_DB_PORT}:${MONGO_DB_PORT}"
+    restart: always
+    volumes:
+      - type: bind
+        source: ${MONGO_DATA_SOURCE}
+        target: ${MONGO_DATA_TARGET}
+    networks:
+      - bc-net
+networks:
+  bc-net:
+    driver: bridge
+    name: bc-net
+    external: true
