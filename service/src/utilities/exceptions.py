@@ -2,6 +2,18 @@ import traceback
 from fastapi import HTTPException
 from loguru import logger
 
+class ModelNotInitializedException(HTTPException):
+    def __init__(self):
+        detail = f'Model is not initialized'
+        self.log_error(detail)
+        super().__init__(status_code=400, detail=detail)
+    
+    @staticmethod
+    def log_error(detail: str):
+        logger.error('[SAMPLE VALIDATION ERROR]')
+        logger.error(detail)
+        logger.error(traceback.format_exc())
+
 class SampleValidationException(HTTPException):
     def __init__(self, detail: str, status_code: int = 400):
         self.log_error(detail)

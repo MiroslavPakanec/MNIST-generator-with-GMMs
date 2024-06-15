@@ -14,6 +14,8 @@ services:
     depends_on:
       - db
       - migration
+    volumes:
+      - ${DATA_SOURCE_PATH}:${DATA_TARGET_PATH}
     networks:
       - bc-net
   migration:
@@ -25,6 +27,8 @@ services:
       - ./.env
     depends_on:
       - db
+    volumes:
+      - ${DATA_SOURCE_PATH}:${DATA_TARGET_PATH}
     networks:
       - bc-net
   db:

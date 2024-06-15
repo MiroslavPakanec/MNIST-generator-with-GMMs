@@ -19,3 +19,6 @@ class Environment(BaseSettings):
     MONGO_DB_TRAIN_COLLECTION_NAME: str
     MONGO_DB_TEST_COLLECTION_NAME: str
     RUN_MIGRATION: bool
+
+    GMM_COMPONENTS: int
+    PCA_COMPONENTS: int
