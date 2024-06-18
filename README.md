@@ -1,6 +1,7 @@
-# Simple MNIST bayesian classifier with GMM 🔢
+# MNIST image generation with GMMs 🔢
 
-- This repo contains a frontend web client and a backend python service for an MNIST classifier
+- This repo contains a frontend web client and a backend python service for an MNIST generator
+- PCA is used to reduce the dimentionality and GMM is used for sampling
   
 ## Quick start
 ### Dependencies
@@ -11,6 +12,7 @@
 3. From project root run `run_linux.sh` or `run_windows.bat` depending on your OS
 
 - Verify api is running at http://localhost:4000
+- Initialize model by calling the /initialize endpoint
 - Verify client is running at http://localhost:4001
 
 ### Troubleshoot
@@ -22,3 +24,5 @@
 
 ### Settings
 - If you don't want to run data migration set `RUN_MIGRATION=false` in `./service/.env`
+- GMM_COMPONENTS - number of mixture components (per label)
+- PCA_COMPONENTS - number of components (dimentionality) of each image to keep
