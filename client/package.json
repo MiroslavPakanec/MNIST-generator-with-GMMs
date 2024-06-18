@@ -8,8 +8,10 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@primevue/themes": "^4.0.0-rc.2",
     "p5": "^1.9.4",
     "pinia": "^2.1.7",
+    "primevue": "^4.0.0-rc.2",
     "vue": "^3.2.13",
     "vue-router": "^4.0.3"
   },

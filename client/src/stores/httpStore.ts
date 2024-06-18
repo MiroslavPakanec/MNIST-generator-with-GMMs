@@ -7,14 +7,13 @@ export const useHttpStore = defineStore('http', () => {
 
     const isFetching: Ref<boolean> = ref(false)
 
-    const predictDigit = async (): Promise<number | undefined> => {
+    const generateDigit = async (digit: number): Promise<number[] | undefined> => {
         const headers = { 'Content-Type': 'application/json' }
-        const method = 'POST'
-        const body: string = pixelStore.pixelsToString()
-        const options = { headers, method, body }
-        const url: string = process.env.VUE_APP_PREDICT_ENDPOINT_URL
-        const response: any = await request(url, options, 'Failed to predict digit.')
-        if (response.error === undefined) return response.prediction
+        const method = 'GET'
+        const options = { headers, method }
+        const url = `${process.env.VUE_APP_GENERATE_ENDPOINT_URL}?label=${digit}`
+        const response: any = await request(url, options, 'Failed to generate digit.')
+        if (response.error === undefined) return response
         alert(response.error)
         return undefined
     }
@@ -26,11 +25,12 @@ export const useHttpStore = defineStore('http', () => {
             if (response?.ok) return await response.json()
             else return { error: (await response.json())?.error ?? errorMessage ?? 'Something went wrong' }
         } catch (error: any) {
+            console.log(error)
             return { error: errorMessage ?? error.message ?? 'Something went wrong' }
         } finally {
             isFetching.value = false
         }
     }
 
-    return { predictDigit, isFetching }
+    return { generateDigit: generateDigit, isFetching }
 })

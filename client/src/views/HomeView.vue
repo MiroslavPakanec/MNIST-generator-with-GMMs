@@ -1,20 +1,34 @@
 <template>
   <div id="container" :style="{ background: gradient }" >
     <div id="navbar" :style="{'width': `${canvasWidth}px`, 'marginTop': `${marginTop}px`}">
-      <button class="btn" @click="reset()">Reset</button>
-      <button class="btn btn-loader" @click="predict()" :disabled="isPredictButtonDisabled">
-        <span v-if="showLoader" class="loader"></span>
-        {{ predictButtonText }}
-      </button>
-      <button class="btn" @click="copy()">{{ copyButtonText }}</button>
-      <span v-if="prediction !== undefined" id="prediction">Prediction: {{ prediction }}</span>
+      <button class="btn btn-loader" @click="generate(0)" :disabled="isGenerateButtonDisabled">0</button>
+      <button class="btn btn-loader" @click="generate(1)" :disabled="isGenerateButtonDisabled">1</button>
+      <button class="btn btn-loader" @click="generate(2)" :disabled="isGenerateButtonDisabled">2</button>
+      <button class="btn btn-loader" @click="generate(3)" :disabled="isGenerateButtonDisabled">3</button>
+      <button class="btn btn-loader" @click="generate(4)" :disabled="isGenerateButtonDisabled">4</button>
+      <button class="btn btn-loader" @click="generate(5)" :disabled="isGenerateButtonDisabled">5</button>
+      <button class="btn btn-loader" @click="generate(6)" :disabled="isGenerateButtonDisabled">6</button>
+      <button class="btn btn-loader" @click="generate(7)" :disabled="isGenerateButtonDisabled">7</button>
+      <button class="btn btn-loader" @click="generate(8)" :disabled="isGenerateButtonDisabled">8</button>
+      <button class="btn btn-loader" @click="generate(9)" :disabled="isGenerateButtonDisabled">9</button>
+      <button class="btn btn-loader" @click="pixelStore.reset()" :disabled="isGenerateButtonDisabled">Reset</button>
     </div>
-    <div id="canvas" :style="{ 'height': `${canvasHeight}px`, 'width': `${canvasWidth}px` }" />
+    <div id="canvas-container" :style="{ 'height': `${canvasHeight}px`}">
+      <div id="slider-container" :style="{ 'height': `${canvasHeight}px`}">
+        <div id="slider-label-container">
+          <p>{{pixelStore.sharpeningTresholds[1]}} - {{pixelStore.sharpeningTresholds[0]}}</p>
+        </div>
+        <Slider :style="{ 'height': `${canvasHeight}px`}" v-model="pixelStore.sharpeningTresholds" range :min="0" :max="255" orientation="vertical" />
+      </div>
+      <div id="canvas" :style="{ 'height': `${canvasHeight}px`, 'width': `${canvasWidth}px` }" />
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 import p5 from 'p5'
+import Slider from 'primevue/slider';
+
 import { ComputedRef, Ref, computed, onMounted, ref } from 'vue'
 import { usePixelStore } from '@/stores/pixelStore'
 import { useHttpStore } from '@/stores/httpStore'
@@ -27,35 +41,12 @@ const canvasPercent: Ref<number> = ref(0.6)
 const canvasWidth: Ref<number> = ref(window.innerHeight * canvasPercent.value)
 const canvasHeight: Ref<number> = ref(window.innerHeight * canvasPercent.value)
 const marginTop: ComputedRef<number> = computed(() => (window.innerHeight / 2) - (canvasHeight.value / 2))
-const copyButtonText: Ref<string> = ref('Copy')
-const predictButtonText: ComputedRef<string> = computed(() => httpStore.isFetching ? 'Predicting...' : 'Predict')
-const isPredictButtonDisabled: ComputedRef<boolean> = computed(() => httpStore.isFetching)
-const showLoader: ComputedRef<boolean> = computed(() => httpStore.isFetching)
+const isGenerateButtonDisabled: ComputedRef<boolean> = computed(() => httpStore.isFetching || pixelStore.isProcessing)
 
-const isLmbPressed: Ref<boolean> = ref(false)
 const mouseXPercent: Ref<number> = ref(0)
 const mouseYPercent: Ref<number> = ref(0)
-const gradient: ComputedRef<string> = computed(() => `radial-gradient(at ${mouseXPercent.value}% ${mouseYPercent.value}%, #3498db, #9b59b6)`)
-const prediction: Ref<string | undefined> = ref(undefined)
+const gradient: ComputedRef<string> = computed(() => `radial-gradient(at ${mouseXPercent.value}% ${mouseYPercent.value}%, #F05941, #22092C)`)
   
-const getMouseX = (sketch: any): number => sketch.mouseX - (canvasWidth.value / 2)
-const getMouseY = (sketch: any): number => sketch.mouseY - (canvasHeight.value / 2)
-
-const skipRender = (sketch: any): boolean => {
-  const r: number = brushDiameter.value / 2
-  if (sketch.mouseX - r >= canvasWidth.value) return true
-  if (sketch.mouseX + r <= 0) return true
-  if (sketch.mouseY - r >= canvasHeight.value) return true
-  if (sketch.mouseY + r <= 0) return true
-  return false
-}
-
-const drawCursor = (sketch: any): void => {
-  sketch.strokeWeight = 1
-  sketch.fill(255,255,255)
-  sketch.ellipse(getMouseX(sketch), getMouseY(sketch), brushDiameter.value, brushDiameter.value)
-}
-
 const drawPixels = (sketch: any): void => {
   sketch.stroke(150, 150, 150)
   sketch.strokeWeight = 1
@@ -85,19 +76,8 @@ const sketch = (sketch: any) => {
   }
 
   sketch.draw = () => {
-    if (skipRender(sketch)) return
-    if (isLmbPressed.value) pixelStore.draw(sketch.mouseX, sketch.mouseY, brushDiameter.value, canvasWidth.value)
     sketch.background(255,255,255)
     drawPixels(sketch)
-    drawCursor(sketch)
-  }
-
-  sketch.mousePressed = () => {
-    if (sketch.mouseButton === sketch.LEFT) isLmbPressed.value = true
-  }
-
-  sketch.mouseReleased = () => {
-    if (sketch.mouseButton === sketch.LEFT) isLmbPressed.value = false
   }
 
   sketch.mouseMoved = () => {
@@ -108,24 +88,10 @@ const sketch = (sketch: any) => {
 
 const clamp = (value: number, min: number, max: number): number => Math.min(Math.max(value, min), max)
 
-const predict = async (): Promise<void> => {
-  const result: number | undefined = await httpStore.predictDigit()
-  const resultStr: string = result === undefined ? 'Unknown' : result.toString()
-  prediction.value = resultStr
-}
-
-const copy = async (): Promise<void> => {
-  const pixels: string = pixelStore.pixelsToString()
-  await navigator.clipboard.writeText(pixels)
-  copyButtonText.value = 'Copied!'
-  setTimeout(() => {
-    copyButtonText.value = 'Copy';
-  }, 2000);
-}
-
-const reset = () => {
-  pixelStore.reset()
-  prediction.value = undefined
+const generate = async (digit: number): Promise<void> => {
+  const flatDigit: number[] | undefined = await httpStore.generateDigit(digit)
+  if (!flatDigit) return
+  pixelStore.setGeneratedPixels(flatDigit)
 }
 
 onMounted(() => {
@@ -141,7 +107,29 @@ onMounted(() => {
   width: 100vw;
   overflow-x: hidden;
   background: rgb(155, 89, 182);
-  background: radial-gradient(at center, rgb(51, 152, 219), #9b59b6);
+  background: radial-gradient(at center, #db9833, #ff8dc2);
+}
+
+#canvas-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  gap: 20px;
+}
+
+#slider-container {
+  width: 100px;
+  display: flex;
+  align-items: center;justify-content: space-around;
+  gap: 20px;
+}
+
+#slider-label-container {
+  height: 50px;
+  width: 200px;
+  color: white;
 }
 
 #canvas {
@@ -149,26 +137,26 @@ onMounted(() => {
   background-color: rgba(255,255,255, 1);
   border-radius: 20px;
   border: 1px solid rgb(51, 152, 219);
-  margin: auto;
-  cursor: none;
+  box-sizing: content-box;
 }
 
 #navbar {
   margin: auto;
-  margin-bottom: 10px;
+  margin-bottom: 30px;
   height: 40px;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
+  padding-left: 130px !important;
   padding: 5px;
   gap: 10px;
 }
 
 .btn {
   padding: 15px;
-  border: 1px solid white;
+  border: 1px solid #cacaca;
   background-color: transparent;
-  color: white;
+  color: #cacaca;
   border-radius: 5px;
   height: 50px;
 }
@@ -182,9 +170,9 @@ onMounted(() => {
 
 .btn:hover {
   cursor: pointer;
-  border: 1px solid #4e2c5b;
-  color: #4e2c5b;
-  background-color: rgba(219, 128, 255, 0.2);
+  border: 1px solid white;
+  color: #872341;
+  background-color: white;
 }
 
 .btn:disabled {
@@ -192,26 +180,6 @@ onMounted(() => {
   color: #4e2c5b;
   background-color: rgba(219, 128, 255, 0.2);
   cursor: not-allowed;
-}
-
-.btn.active {
-  border: 1px solid #4e2c5b;
-  color: #4e2c5b;
-  background-color: rgba(219, 128, 255, 0.2);
-}
-
-#prediction { 
-  border: 1px solid #4e2c5b;
-  color: #4e2c5b;
-  background-color: rgba(219, 128, 255, 0.2);
-  border-radius: 5px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  padding-left: 10px;
-  padding-right: 10px;
 }
 
 .loader {
